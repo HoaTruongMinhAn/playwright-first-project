@@ -2,7 +2,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const config = {
-  testDir: "./tests",
+  testDir: "./tests/hoaTest/",
   timeout: 10 * 1000,
   expect: {
     timeout: 10 * 1000,
@@ -10,6 +10,7 @@ const config = {
   reporter: "html",
   use: {
     browserName: "chromium",
+    headless: false,
   },
 };
 
