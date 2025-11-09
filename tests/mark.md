@@ -36,3 +36,7 @@ And check out the following files:
 - ./playwright.config.js - Playwright Test configuration
 
 Visit https://playwright.dev/docs/intro for more information. ✨
+
+# To open last HTML report run:
+
+npx playwright show-report
