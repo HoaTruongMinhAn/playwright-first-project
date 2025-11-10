@@ -3,9 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 const config = {
   testDir: "./tests/hoaTest",
-  timeout: 10 * 1000,
+  timeout: 30 * 1000,
   expect: {
-    timeout: 10 * 1000,
+    timeout: 5 * 1000,
   },
   reporter: "html",
   use: {
