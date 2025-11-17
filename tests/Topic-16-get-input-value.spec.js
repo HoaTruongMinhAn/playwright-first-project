@@ -37,7 +37,30 @@ test("Child window handling", async ({ browser }) => {
   const passwordTextbox = page.locator("input#password");
   const signInButton = page.locator("input#signInBtn");
   await usernameTextbox.fill(domainName);
+  await expect(usernameTextbox).toHaveValue(domainName);
+  console.log(
+    "Filled Username text is: " + (await usernameTextbox.textContent())
+  ); // empty
+  console.log(
+    "Filled Username attribute is: " +
+      (await usernameTextbox.getAttribute("value"))
+  ); // null
+  console.log(
+    "Username input value is: " + (await usernameTextbox.inputValue())
+  ); // correct value
+
   await passwordTextbox.fill("learning");
+  await expect(passwordTextbox).toHaveValue("learning");
+  console.log(
+    "Filled Password text is: " + (await passwordTextbox.textContent())
+  ); // empty
+  console.log(
+    "Filled Password attribute is: " +
+      (await passwordTextbox.getAttribute("value"))
+  ); // null
+  console.log(
+    "Password input value is: " + (await passwordTextbox.inputValue())
+  ); // correct value
   await signInButton.click();
 
   await expect(
