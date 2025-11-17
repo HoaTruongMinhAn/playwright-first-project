@@ -11,17 +11,7 @@ test("UI control - Static dropdown", async ({ browser }) => {
   const context = await browser.newContext(options);
   const page = await context.newPage();
   await page.goto("https://rahulshettyacademy.com/loginpagePractise/");
-  const termsCheckbox = page.locator("//input[@id='terms']");
-  await expect(termsCheckbox).not.toBeChecked();
-  await page.pause();
-
-  await termsCheckbox.check();
-  await expect(termsCheckbox).toBeChecked();
-  expect(await termsCheckbox.isChecked()).toBeTruthy();
-  await page.pause();
-
-  await termsCheckbox.uncheck();
-  await expect(termsCheckbox).not.toBeChecked();
-  expect(await termsCheckbox.isChecked()).toBeFalsy();
-  await page.pause();
+  const materialLink = page.locator("//a[contains(@href,'documents-request')]");
+  await expect(materialLink).toHaveAttribute("href");
+  await expect(materialLink).toHaveAttribute("class", "blinkingText");
 });
