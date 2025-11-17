@@ -19,9 +19,9 @@ test("Browser context Playwright test", async ({ browser }) => {
   await passwordTextbox.fill("learning");
   await signInButton.click();
 
-  // await expect(
-  //   page.locator("//div[@class='container']/a[@class='navbar-brand']")
-  // ).toHaveText("ProtoCommerce Home");
+  await expect(
+    page.locator("//div[@class='container']/a[@class='navbar-brand']")
+  ).toHaveText("ProtoCommerce Home");
 
   const productTitles = await page.locator("//app-card//h4");
   console.log("productTitles: " + productTitles); //locator('//app-card//h4')
@@ -39,6 +39,7 @@ test("Browser context Playwright test", async ({ browser }) => {
   await expect(titles[2]).toContain("Nokia Edge");
   await expect(titles[3]).toContain("Blackberry");
 
+  //Wrong
   // console.log("Product titles are: " + (await productTitles.allTextContents()));
   // console.log("Product title 1: " + (await productTitles.allTextContents()[0]));
   // console.log("Product title 2: " + (await productTitles.allTextContents()[1]));
