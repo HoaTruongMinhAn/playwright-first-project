@@ -58,6 +58,15 @@ test("Browser context Playwright test", async ({ browser }) => {
   const checkOutButton = page.locator("//button[text()='Checkout']");
   await checkOutButton.click();
 
+  // Verify email label and textbox
+  const emailLabel = page.locator("//div[contains(@class,'user__name')]/label");
+  const placeOrderEmailTextbox = page.locator(
+    "//div[contains(@class,'user__name')]/input"
+  );
+
+  await expect(emailLabel).toHaveText(username);
+  await expect(placeOrderEmailTextbox).toHaveValue(username);
+
   // Fill the form
   const emailTextbox = page.locator(
     "//div[@class='details__user']//input[@type='text']"
@@ -93,7 +102,7 @@ test("Browser context Playwright test", async ({ browser }) => {
   const thankYouMessage = page.locator("//h1");
   await expect(thankYouMessage).toHaveText("Thankyou for the order.");
 
-  const orderIdLabel = page.locator("//label[@class='ng-star-inserted']");
+  let orderIdLabel = page.locator("//label[@class='ng-star-inserted']");
   const orderIdText = await orderIdLabel.textContent();
   const orderId = orderIdText.trim().replace(/\|/g, "").trim();
   console.log("Order ID is: " + orderId);
@@ -106,4 +115,29 @@ test("Browser context Playwright test", async ({ browser }) => {
   );
   await expect(productNameOnOrder).toHaveText(productName);
   await expect(productQualityOnOrder).toHaveText("Qty: 1");
+
+  // Go to Orders page
+  const ordersMenu = page.locator(
+    "//button[@routerlink='/dashboard/myorders']"
+  );
+  await ordersMenu.click();
+
+  // Verify the new order exists
+  const newOrderCell = page.locator(`//th[text()='${orderId}']`);
+  await expect(newOrderCell).toBeVisible();
+
+  // View the new order
+  const viewButton = page.locator(
+    `//th[text()='${orderId}']/following-sibling::td/button[text()='View']`
+  );
+  await viewButton.click();
+
+  // Verify the new order id opened for review
+  const orderSummaryLabel = page.locator("//div[@class='email-title']");
+  await expect(orderSummaryLabel).toBeVisible();
+
+  orderIdLabel = page.locator(
+    "//small[text()='Order Id']/following-sibling::div"
+  );
+  await expect(orderIdLabel).toHaveText(orderId);
 });
