@@ -14,18 +14,17 @@ test("Playwright show/hide element", async ({ browser }) => {
     timeout: 60000,
   });
 
-  const dynamicTextbox = page.locator("//input[@id='displayed-text']");
-  await expect(dynamicTextbox).toBeVisible();
+  // Dismiss dialog
+  page.once("dialog", async (dialog) => {
+    await page.waitForTimeout(2000);
+    await dialog.dismiss();
+  });
 
-  const hideButton = page.locator(
-    "//input[@type='submit' and @id='hide-textbox']"
-  );
-  await hideButton.click();
-  await expect(dynamicTextbox).toBeHidden();
+  const name = "PlayWright newbie";
+  const nameTextbox = page.locator("//input[@id='name']");
+  await nameTextbox.fill(name);
 
-  const showButton = page.locator(
-    "//input[@type='submit' and @id='show-textbox']"
-  );
-  await showButton.click();
-  await expect(dynamicTextbox).toBeVisible();
+  const confirmButton = page.locator("//input[@id='confirmbtn']");
+  await confirmButton.click();
+  await page.waitForTimeout(1000);
 });
