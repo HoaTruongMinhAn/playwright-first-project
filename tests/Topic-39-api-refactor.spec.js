@@ -1,4 +1,8 @@
 const { test, expect, request } = require("@playwright/test");
+const { ApiUtils } = require("../utils/ApiUtils");
+
+/** @type {ApiUtils} */
+let apiUtils;
 const username = "hoaTest1@test.aaa.bbb.com";
 const password = "Password@1";
 const loginPayload = {
@@ -11,17 +15,10 @@ let token;
 test.beforeAll(async () => {
   // login api
   const apiContext = await request.newContext();
-  const loginResponse = await apiContext.post(
-    "https://rahulshettyacademy.com/api/ecom/auth/login",
-    {
-      data: loginPayload,
-    }
-  );
-  await expect(loginResponse).toBeOK();
-
-  const loginResponseJson = await loginResponse.json();
-  userId = loginResponseJson.userId;
-  token = loginResponseJson.token;
+  apiUtils = new ApiUtils(apiContext);
+  const loginResult = await apiUtils.login(username, password);
+  userId = loginResult.userId;
+  token = loginResult.token;
 });
 
 test("Web api", async ({ browser }) => {
@@ -37,20 +34,7 @@ test("Web api", async ({ browser }) => {
   }, token);
 
   // get-all-products api
-  const apiContext = await request.newContext();
-  const allProductPayload = {
-    productName: "",
-    minPrice: null,
-    maxPrice: null,
-    productCategory: [],
-    productSubCategory: [],
-    productFor: [],
-  };
-  const header = { Authorization: token, "Content-Type": "application/json" };
-  const allProductResponse = await apiContext.post(
-    "https://rahulshettyacademy.com/api/ecom/product/get-all-products",
-    { data: allProductPayload, headers: header }
-  );
+  const allProductResponse = await apiUtils.getAllProducts();
   await expect(allProductResponse).toBeOK();
 
   // Get product Id
@@ -65,28 +49,10 @@ test("Web api", async ({ browser }) => {
   console.log("productId: " + productId);
 
   // addToCart api
-  const addToCartPayload = {
-    _id: userId,
-    product: {
-      _id: productId,
-      productName: productName,
-      productCategory: "electronics",
-      productSubCategory: "mobiles",
-      productPrice: 11500,
-      productDescription: "Apple phone",
-      productImage:
-        "https://rahulshettyacademy.com/api/ecom/uploads/productImage_1650649434146.jpeg",
-      productRating: "0",
-      productTotalOrders: "0",
-      productStatus: true,
-      productFor: "women",
-      productAddedBy: "admin",
-      __v: 0,
-    },
-  };
-  const addToCartResponse = await apiContext.post(
-    "https://rahulshettyacademy.com/api/ecom/user/add-to-cart",
-    { data: addToCartPayload, headers: header }
+  const addToCartResponse = await apiUtils.addToCart(
+    userId,
+    productId,
+    productName
   );
   await expect(addToCartResponse).toBeOK();
 
@@ -95,18 +61,8 @@ test("Web api", async ({ browser }) => {
   await expect(message).toBe("Product Added To Cart");
 
   // createOrder api
-  const createOrderPayload = {
-    orders: [
-      {
-        country: "Vietnam",
-        productOrderedId: productId,
-      },
-    ],
-  };
-  const createOrderResponse = await apiContext.post(
-    "https://rahulshettyacademy.com/api/ecom/order/create-order",
-    { data: createOrderPayload, headers: header }
-  );
+
+  const createOrderResponse = await apiUtils.createOrder(productId);
   await expect(createOrderResponse).toBeOK();
   const createOrderResponseJson = await createOrderResponse.json();
   const orderId = createOrderResponseJson.orders;
