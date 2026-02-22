@@ -5,6 +5,7 @@ let context;
 let page;
 const username = "hoaTest1@test.aaa.bbb.com";
 const password = "Password@1";
+const productName = "ADIDAS ORIGINAL";
 
 test.beforeAll(async ({ browser }) => {
   const options = {
@@ -32,7 +33,7 @@ test.beforeAll(async ({ browser }) => {
   await context.storageState({ path: "tests/state.json" });
 });
 
-test("Browser context Playwright test", async ({ browser }) => {
+test("Network request intercept", async ({ browser }) => {
   const options = {
     args: ["--start-maximized", "--window-position=0,0"],
     viewport: { width: 1920, height: 1080 },
@@ -54,13 +55,12 @@ test("Browser context Playwright test", async ({ browser }) => {
   console.log("Product titles are: " + titles); // ZARA COAT 3,ADIDAS ORIGINAL,iphone 13 pro
   console.log("Product title 1: " + titles[0]); // ZARA COAT 3
 
-  // Common string comparison functions in Playwright:
-  await expect(titles[0]).toContain("ZARA COAT 3"); // Checks if string contains substring
-
   // Add to cart
-  const productName = "ZARA COAT 3";
+  // Common string comparison functions in Playwright:
+  await expect(titles[0]).toContain(productName); // Checks if string contains substring
+
   const item = page.locator(
-    `//b[text()='${productName}']/parent::h5/following-sibling::button[i[@class='fa fa-shopping-cart']]`
+    `//b[text()='${productName}']/parent::h5/following-sibling::button[i[@class='fa fa-shopping-cart']]`,
   );
   await expect(item).toBeVisible();
   await expect(item).toBeEnabled();
@@ -72,7 +72,7 @@ test("Browser context Playwright test", async ({ browser }) => {
   await cartButton.click();
 
   const expectedItem = page.locator(
-    `//div[@class='cart']/ul//h3[text()='${productName}']`
+    `//div[@class='cart']/ul//h3[text()='${productName}']`,
   );
   await expect(expectedItem).toBeVisible();
   await expect(expectedItem).toBeEnabled();
@@ -84,7 +84,7 @@ test("Browser context Playwright test", async ({ browser }) => {
   // Verify email label and textbox
   const emailLabel = page.locator("//div[contains(@class,'user__name')]/label");
   const placeOrderEmailTextbox = page.locator(
-    "//div[contains(@class,'user__name')]/input"
+    "//div[contains(@class,'user__name')]/input",
   );
 
   await expect(emailLabel).toHaveText(username);
@@ -92,16 +92,16 @@ test("Browser context Playwright test", async ({ browser }) => {
 
   // Fill the form
   const emailTextbox = page.locator(
-    "//div[@class='details__user']//input[@type='text']"
+    "//div[@class='details__user']//input[@type='text']",
   );
   const countryTextbox = page.locator(
-    "//div[@class='details__user']//input[@data-np-autofill-field-type='country']"
+    "//div[@class='details__user']//input[@data-np-autofill-field-type='country']",
   );
   const placeOrderContainer = page.locator(
-    "//div[@class='details__user']//div[@class='form-group']"
+    "//div[@class='details__user']//div[@class='form-group']",
   );
   const placeOrderButton = page.locator(
-    "//div[@class='details__user']//a[@class='btnn action__submit ng-star-inserted']"
+    "//div[@class='details__user']//a[@class='btnn action__submit ng-star-inserted']",
   );
 
   await emailTextbox.fill(username);
@@ -114,7 +114,7 @@ test("Browser context Playwright test", async ({ browser }) => {
   // await countryTextbox.pressSequentially(country);
 
   const countryDropdown = page.locator(
-    `//span[normalize-space()='${country}']`
+    `//span[normalize-space()='${country}']`,
   );
   await countryDropdown.click();
 
@@ -131,17 +131,17 @@ test("Browser context Playwright test", async ({ browser }) => {
   console.log("Order ID is: " + orderId);
 
   const productNameOnOrder = page.locator(
-    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='title']"
+    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='title']",
   );
   const productQualityOnOrder = page.locator(
-    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='sub']"
+    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='sub']",
   );
   await expect(productNameOnOrder).toHaveText(productName);
   await expect(productQualityOnOrder).toHaveText("Qty: 1");
 
   // Go to Orders page
   const ordersMenu = page.locator(
-    "//button[@routerlink='/dashboard/myorders']"
+    "//button[@routerlink='/dashboard/myorders']",
   );
   await ordersMenu.click();
 
@@ -151,40 +151,30 @@ test("Browser context Playwright test", async ({ browser }) => {
 
   // View the new order
   const viewButton = page.locator(
-    `//th[text()='${orderId}']/following-sibling::td/button[text()='View']`
+    `//th[text()='${orderId}']/following-sibling::td/button[text()='View']`,
   );
+
+  // Network intercept scenario
+  await page.route(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=*",
+    async (route) => {
+      // Cook request
+      route.continue({
+        url: `https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=${orderId}0001`,
+      });
+    },
+  );
+
+  // Trigger the real request
   await viewButton.click();
 
-  // Verify the new order id opened for review
-  const orderSummaryLabel = page.locator("//div[@class='email-title']");
-  await expect(orderSummaryLabel).toBeVisible();
-
-  orderIdLabel = page.locator(
-    "//small[text()='Order Id']/following-sibling::div"
+  // Wait for the response
+  await page.waitForResponse(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=*",
   );
-  await expect(orderIdLabel).toHaveText(orderId);
-});
 
-test("Test 2", async ({ browser }) => {
-  const options = {
-    args: ["--start-maximized", "--window-position=0,0"],
-    viewport: { width: 1920, height: 1080 },
-    storageState: "tests/state.json",
-  };
-  const context = await browser.newContext(options);
-  const page = await context.newPage();
-  await page.goto("https://rahulshettyacademy.com/client", {
-    timeout: 60000,
-  });
-
-  const productTitles = await page.locator("//div[@class='card-body']//b");
-  await productTitles.last().waitFor();
-  console.log("productTitles: " + productTitles);
-
-  const titles = await productTitles.allTextContents();
-  console.log("Product titles are: " + titles); // ZARA COAT 3,ADIDAS ORIGINAL,iphone 13 pro
-  console.log("Product title 1: " + titles[0]); // ZARA COAT 3
-
-  // Common string comparison functions in Playwright:
-  await expect(titles[0]).toContain("ZARA COAT 3"); // Checks if string contains substring
+  const noPermissionMessage = page.locator("//p[@class='blink_me']");
+  await expect(noPermissionMessage).toHaveText(
+    "You are not authorize to view this order",
+  );
 });

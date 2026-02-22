@@ -33,7 +33,7 @@ test.beforeAll(async ({ browser }) => {
   await context.storageState({ path: "tests/state.json" });
 });
 
-test("Browser context Playwright test", async ({ browser }) => {
+test("Network request intercept", async ({ browser }) => {
   const options = {
     args: ["--start-maximized", "--window-position=0,0"],
     viewport: { width: 1920, height: 1080 },
@@ -153,38 +153,28 @@ test("Browser context Playwright test", async ({ browser }) => {
   const viewButton = page.locator(
     `//th[text()='${orderId}']/following-sibling::td/button[text()='View']`,
   );
+
+  // Network intercept scenario
+  await page.route(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=*",
+    async (route) => {
+      // Cook request
+      route.continue({
+        url: `https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=${orderId}0001`,
+      });
+    },
+  );
+
+  // Trigger the real request
   await viewButton.click();
 
-  // Verify the new order id opened for review
-  const orderSummaryLabel = page.locator("//div[@class='email-title']");
-  await expect(orderSummaryLabel).toBeVisible();
-
-  orderIdLabel = page.locator(
-    "//small[text()='Order Id']/following-sibling::div",
+  // Wait for the response
+  await page.waitForResponse(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id=*",
   );
-  await expect(orderIdLabel).toHaveText(orderId);
-});
 
-test("Test 2", async ({ browser }) => {
-  const options = {
-    args: ["--start-maximized", "--window-position=0,0"],
-    viewport: { width: 1920, height: 1080 },
-    storageState: "tests/state.json",
-  };
-  const context = await browser.newContext(options);
-  const page = await context.newPage();
-  await page.goto("https://rahulshettyacademy.com/client", {
-    timeout: 60000,
-  });
-
-  const productTitles = await page.locator("//div[@class='card-body']//b");
-  await productTitles.last().waitFor();
-  console.log("productTitles: " + productTitles);
-
-  const titles = await productTitles.allTextContents();
-  console.log("Product titles are: " + titles); // ZARA COAT 3,ADIDAS ORIGINAL,iphone 13 pro
-  console.log("Product title 1: " + titles[0]); // ZARA COAT 3
-
-  // Common string comparison functions in Playwright:
-  await expect(titles[0]).toContain(productName); // Checks if string contains substring
+  const noPermissionMessage = page.locator("//p[@class='blink_me']");
+  await expect(noPermissionMessage).toHaveText(
+    "You are not authorize to view this order",
+  );
 });

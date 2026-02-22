@@ -19,9 +19,11 @@ test.beforeAll(async () => {
   const loginResult = await apiUtils.login(username, password);
   userId = loginResult.userId;
   token = loginResult.token;
+  console.log("userId: " + userId);
+  console.log("token: " + token);
 });
 
-test("Web api", async ({ browser }) => {
+test("Network response intercept", async ({ browser }) => {
   const options = {
     args: ["--start-maximized", "--window-position=0,0"],
     viewport: { width: 1920, height: 1080 },
@@ -76,43 +78,39 @@ test("Web api", async ({ browser }) => {
     },
   );
 
-  // Verify the order confirmation
-  const thankYouMessage = page.locator("//h1");
-  await expect(thankYouMessage).toHaveText("Thankyou for the order.");
+  // Network intercept scenario
+  await page.route(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-for-customer/*",
+    async (route) => {
+      // Get real response
+      const realResponse = await page.request.fetch(route.request());
 
-  let orderIdLabel = page.locator(`//label[contains(text(),'${orderId}')]`);
-  await expect(orderIdLabel).toBeVisible();
+      // Cook response
+      let cookedResponse = { data: [], message: "No Orders" };
 
-  const productNameOnOrder = page.locator(
-    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='title']",
+      // Respond with the cooked response
+      route.fulfill({
+        response: realResponse,
+        body: JSON.stringify(cookedResponse),
+      });
+    },
   );
-  const productQualityOnOrder = page.locator(
-    "//td[contains(@class,'line-item product-info-column')][1]/div[@class='sub']",
+
+  // Trigger the real request
+  await page.goto(
+    `https://rahulshettyacademy.com/client/#/dashboard/myorders`,
+    {
+      timeout: 60000,
+    },
   );
-  await expect(productNameOnOrder).toHaveText(productName);
-  await expect(productQualityOnOrder).toHaveText("Qty: 1");
 
-  const ordersMenu = page.locator(
-    "//button[@routerlink='/dashboard/myorders']",
+  // Wait for the response
+  await page.waitForResponse(
+    "https://rahulshettyacademy.com/api/ecom/order/get-orders-for-customer/*",
   );
-  await ordersMenu.click();
 
-  // Verify the new order exists
-  const newOrderCell = page.locator(`//th[text()='${orderId}']`);
-  await expect(newOrderCell).toBeVisible();
-
-  // View the new order
-  const viewButton = page.locator(
-    `//th[text()='${orderId}']/following-sibling::td/button[text()='View']`,
+  const noOrdersMessage = page.locator("//div[contains(@class,'mt-4')]");
+  await expect(noOrdersMessage).toHaveText(
+    "You have No Orders to show at this time. Please Visit Back Us",
   );
-  await viewButton.click();
-
-  // Verify the new order id opened for review
-  const orderSummaryLabel = page.locator("//div[@class='email-title']");
-  await expect(orderSummaryLabel).toBeVisible();
-
-  orderIdLabel = page.locator(
-    "//small[text()='Order Id']/following-sibling::div",
-  );
-  await expect(orderIdLabel).toHaveText(orderId);
 });
