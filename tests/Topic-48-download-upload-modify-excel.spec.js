@@ -66,10 +66,12 @@ test("Replace text in excel", async ({ browser }) => {
   // Wait for download
   // await page.waitForTimeout(3000);
 
+  const downloadButton = page.locator("//button[@id='downloadButton']");
+
   // Handle download file name
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.click("//button[@id='downloadButton']"),
+    downloadButton.click(),
   ]);
 
   let fileName = download.suggestedFilename();
