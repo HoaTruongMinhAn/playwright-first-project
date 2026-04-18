@@ -3,6 +3,12 @@ const ExcelJs = require("exceljs");
 const path = require("path");
 const fs = require("fs");
 
+async function getWorksheet(filePath, sheetName) {
+  const workbook = new ExcelJs.Workbook();
+  await workbook.xlsx.readFile(filePath);
+  return workbook.getWorksheet(sheetName);
+}
+
 async function getCellCoordinate(worksheet, searchText) {
   let returnCell;
 
@@ -22,6 +28,11 @@ async function getCellCoordinate(worksheet, searchText) {
     });
   });
   return { row: returnCell.row, column: returnCell.col };
+}
+
+async function getCellCoordinateFromFile(filePath, sheetName, searchText) {
+  const worksheet = await getWorksheet(filePath, sheetName);
+  return await getCellCoordinate(worksheet, searchText);
 }
 
 async function replaceTextInExcel(
@@ -63,9 +74,6 @@ test("Replace text in excel", async ({ browser }) => {
     timeout: 60000,
   });
 
-  // Wait for download
-  // await page.waitForTimeout(3000);
-
   const downloadButton = page.locator("//button[@id='downloadButton']");
 
   // Handle download file name
@@ -88,13 +96,33 @@ test("Replace text in excel", async ({ browser }) => {
 
   console.log("Saved to:", filePath);
 
+  const searchText = "Banana";
+  const replaceText = "999999";
+
+  const cellCoordinate = await getCellCoordinateFromFile(
+    filePath,
+    "Sheet1",
+    searchText,
+  );
+  const searchRow = cellCoordinate.row;
+  const searchColumn = cellCoordinate.column;
+  const updateRow = searchRow - 2; // minus 2 because the row is 0-based index
+  const updateColumn = searchColumn + 2;
+  console.log("searchRow: " + searchRow);
+  console.log("searchColumn: " + searchColumn);
+  console.log("updateRow: " + updateRow);
+  console.log("updateColumn: " + updateColumn);
+
   await replaceTextInExcel(
     filePath,
     newFilePath,
     "Sheet1",
-    "Banana",
-    "999999",
-    { row: 0, column: 2 },
+    searchText,
+    replaceText,
+    {
+      row: 0,
+      column: 2,
+    },
   );
 
   const uploadTextbox = page.locator(
@@ -102,5 +130,9 @@ test("Replace text in excel", async ({ browser }) => {
   );
   await uploadTextbox.setInputFiles(newFilePath);
 
-  await page.waitForTimeout(3000);
+  const cellLocation = page.locator(
+    `//div[@id='row-${updateRow}']/div[@id='cell-${updateColumn}-undefined']`,
+  );
+  await expect(cellLocation).toBeVisible();
+  await expect(cellLocation).toHaveText(replaceText);
 });
