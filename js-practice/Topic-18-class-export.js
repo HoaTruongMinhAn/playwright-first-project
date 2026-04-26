@@ -1,4 +1,3 @@
-// --- Instance methods and `this` ---
 class Counter {
   value = 0;
 
