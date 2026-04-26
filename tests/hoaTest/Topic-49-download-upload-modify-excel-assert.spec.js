@@ -63,7 +63,7 @@ async function replaceTextInExcel(
   }
 }
 
-test("Replace text in excel", async ({ browser }) => {
+test("Replace text in excel...", async ({ browser }) => {
   const options = {
     args: ["--start-maximized", "--window-position=0,0"],
     viewport: { width: 1920, height: 1080 },
