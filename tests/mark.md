@@ -52,6 +52,9 @@ npx playwright test Topic-08-wait-new-page.spec.js
 
 ```bash
 npx playwright test
+
+
+npm install -D --savedev typescript
 ```
 
 And check out the following files:
